@@ -1,0 +1,71 @@
+pipeline {
+
+    agent {
+        label 'Agent' // Ensure this label matches an available Jenkins agent
+    }
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('Docker') // Ensure 'Docker' credentials are set in Jenkins
+        DOCKERFILE = 'primecare-html/Dockerfile' // Path to the Dockerfile in the repository
+        CONTAINER_NAME = 'webex' // Unused in this script, but typically for container naming
+        IMAGE_NAME = 'joehaddy/webapp:lastest' // Docker image name with tag
+        IMAGE_TAG = '1.0'
+        GIT_REPO_URL = 'https://github.com/joehaddy07/Devops-Jenkins.git' // GitHub repository URL
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git url: "${env.GIT_REPO_URL}", branch: 'main' // Clone the repository's main branch
+            }
+        }
+
+        stage('Check file') {
+            steps {
+                script {
+                    if (fileExists(env.DOCKERFILE)) {
+                        echo "File exists: ${env.DOCKERFILE}"
+                    } else {
+                        error "File does not exist: ${env.DOCKERFILE}"
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build("${env.IMAGE_NAME}", "${env.DOCKERFILE} .") // Build Docker image from specified Dockerfile
+                }
+            }
+        }
+
+        stage('Run & Push Docker Image') {
+            steps {
+                script {
+                    sh "docker run --name ${env.CONTAINER_NAME} -d -p 80:80 ${env.IMAGE_NAME}"
+                    sh "docker images"
+                    sh "docker ps -a"
+                    docker.withRegistry('https://index.docker.io/v1/', env.DOCKERHUB_CREDENTIALS) {
+                       docker.image("${env.IMAGE_NAME}:${env.IMAGE_TAG}").push() // Push Docker image to Docker Hub with '1.0'  as tag
+                        
+                    }
+                }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                script {
+                    sh "docker rmi -f ${env.IMAGE_NAME}" // Remove the Docker image locally to free up space
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs() // Clean up the Jenkins workspace to remove temporary files
+        }
+    }
+}
