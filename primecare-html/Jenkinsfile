@@ -5,7 +5,7 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('Docker')
-        DOCKERFILE = 'Primecare-html/Dockerfile'
+        DOCKERFILE = 'primecare-html/Dockerfile'
         CONTAINER_NAME = 'webex'
         IMAGE_NAME = 'joehaddy/webapp'
         IMAGE_TAG = '1.0'
