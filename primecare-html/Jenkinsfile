@@ -55,6 +55,10 @@ pipeline {
         stage('Cleanup') {
             steps {
                 script {
+                    // Stop and remove the container if running
+                    sh "docker stop ${env.CONTAINER_NAME} || true"
+                    sh "docker rm ${env.CONTAINER_NAME} || true"
+                    // Remove the image
                     sh "docker rmi -f ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                 }
             }
